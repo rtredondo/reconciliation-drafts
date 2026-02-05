@@ -1,0 +1,74 @@
+with dl as (
+SELECT date AS install_date,
+       platform,
+       country,
+       app_name AS app,
+       media_source AS SOURCE, --trim(campaign) AS campaign,
+ DAY,
+ sum(cost) as spend_dl,
+ sum(installs) AS installs_dl,
+ sum(active_users) AS active_users_dl,
+ --sum(coalesce(AF_APP_OPENED_MONETIZED_SUM_CUMUALTIVE,0)) af_app_sum_dl ,
+ --sum(coalesce(AF_AD_REVENUE_SUM_CUMUALTIVE,0)) ad_ad_sum_dl ,
+ --sum(coalesce(STORE_PRODUCT_PURCHASE_SUCCESS_SUM_CUMUALTIVE,0)) store_product_sum_dl ,
+--- sum(coalesce(AF_PURCHASE_SUM_CUMUALTIVE,0)) af_purchase_dl ,
+-- sum(coalesce(AF_IAP_COINS_SUM_CUMUALTIVE,0)) af_iap_coins_dl ,
+-- sum(coalesce(AF_IAP_NOADS_SUM_CUMUALTIVE,0)) af_iap_noads_dl, 
+ sum(coalesce(AF_APP_OPENED_MONETIZED_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_AD_REVENUE_SUM_CUMUALTIVE,0)) iaa_cumul_revenue_dl,
+ sum(coalesce(STORE_PRODUCT_PURCHASE_SUCCESS_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_PURCHASE_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_IAP_COINS_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_IAP_NOADS_SUM_CUMUALTIVE,0)) iap_cumul_revenue_dl,
+-- sum(coalesce(AF_APP_OPENED_MONETIZED_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_AD_REVENUE_SUM_CUMUALTIVE,0)) iaa_revenue_dl ,
+ --sum(coalesce(STORE_PRODUCT_PURCHASE_SUCCESS_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_PURCHASE_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_IAP_COINS_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_IAP_NOADS_SUM_CUMUALTIVE,0) iap_revenue_dl ,
+ sum(coalesce(AF_APP_OPENED_MONETIZED_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_AD_REVENUE_SUM_CUMUALTIVE,0)) +sum(coalesce(STORE_PRODUCT_PURCHASE_SUCCESS_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_PURCHASE_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_IAP_COINS_SUM_CUMUALTIVE,0)) +sum(coalesce(AF_IAP_NOADS_SUM_CUMUALTIVE,0)) total_revenue_dl
+FROM public.appsflyer_retentions_datalocker_cumulative_high_lvl a
+WHERE 1=1
+--and platform = 'android' and country ='US' and app='petcafe' and source = 'unityads_int' AND date ='2022-01-01'
+  
+  AND DAY < 181
+GROUP BY 1,
+         2,
+         3,
+         4,
+         5,
+         6
+
+),
+cohapi as (
+select
+    date as install_date,
+    platform,
+    geo as country,
+    app,
+    pid as source,
+
+    day,
+    sum(cost) as spend_cohapi,
+    sum(users) as installs_cohapi,
+    sum(active_users) as active_users_cohapi
+   -- sum(coalesce(AF_APP_OPENED_MONETIZED_SUM_CUMULATIVE,0)) af_app_sum_cohapi
+  --  ,sum(coalesce(AF_AD_REVENUE_SUM_CUMULATIVE,0)) ad_ad_sum_ret
+    --,sum(coalesce(STORE_PRODUCT_PURCHASE_SUCCESS_SUM_CUMULATIVE,0)) store_product_sum_ret
+   -- ,sum(coalesce(AF_PURCHASE_SUM_CUMULATIVE,0)) af_purchase_ret
+ --   , sum(coalesce(AF_IAP_COINS_SUM_CUMULATIVE,0)) af_iap_coins_ret
+
+    ,sum(coalesce(AF_APP_OPENED_MONETIZED_SUM_CUMULATIVE,0))
+    +sum(coalesce(AF_AD_REVENUE_SUM_CUMULATIVE,0)) iaa_cumul_revenue_cohapi
+,sum(coalesce(STORE_PRODUCT_PURCHASE_SUCCESS_SUM_CUMULATIVE,0))
+    +sum(coalesce(AF_PURCHASE_SUM_CUMULATIVE,0))
+    +sum(coalesce(AF_IAP_COINS_SUM_CUMULATIVE,0)) iap_cumul_revenue_cohapi
+    ,sum(coalesce(AF_APP_OPENED_MONETIZED_SUM_CUMULATIVE,0))
+    +sum(coalesce(AF_AD_REVENUE_SUM_CUMULATIVE,0))
+    +sum(coalesce(STORE_PRODUCT_PURCHASE_SUCCESS_SUM_CUMULATIVE,0))
+    +sum(coalesce(AF_PURCHASE_SUM_CUMULATIVE,0))
+    +sum(coalesce(AF_IAP_COINS_SUM_CUMULATIVE,0))  as total_revenue_cohapi
+
+from appsflyer_retentions_union
+where 1=1
+--and platform = 'android' and country ='US' and app='petcafe' and source = 'unityads_int' and date = '2022-01-01'
+and day < 181
+group by 1,2,3,4,5,6
+
+)
+select *
+from dl full join cohapi using (install_date, platform, country, app, source, /*campaign,*/ day)
+
+  
